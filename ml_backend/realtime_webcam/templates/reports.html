@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidence Analysis Reports</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url("/static/imgs/bg.jpg");
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+        }
+        nav {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .container {
+            max-width: 90%;
+            margin: 80px auto 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .confidence-good {
+            color: green;
+            font-weight: bold;
+        }
+        .confidence-average {
+            color: orange;
+            font-weight: bold;
+        }
+        .confidence-low {
+            color: red;
+            font-weight: bold;
+        }
+        .report-card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .report-transcript {
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index">Home</a>
+        <a href="/reports">Reports</a>
+        <a href="/logout">Logout</a>
+    </nav>
+    <div class="container">
+        <h1>Your Confidence Analysis Reports</h1>
+        
+        {% if results %}
+            <div class="row">
+            {% for result in results %}
+                <div class="col-lg-6">
+                    <div class="card report-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Report #{{ result[0] }}</h5>
+                            <span class="text-muted">{{ result[5].strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4 text-center">
+                                    <h6>Visual Confidence</h6>
+                                    <h3 class="
+                                        {% if result[1] >= 70 %}confidence-good
+                                        {% elif result[1] >= 50 %}confidence-average
+                                        {% else %}confidence-low{% endif %}
+                                    ">{{ result[1] }}%</h3>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <h6>Verbal Confidence</h6>
+                                    <h3 class="
+                                        {% if result[2] >= 70 %}confidence-good
+                                        {% elif result[2] >= 50 %}confidence-average
+                                        {% else %}confidence-low{% endif %}
+                                    ">{{ result[2] }}%</h3>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <h6>Overall Score</h6>
+                                    <h3 class="
+                                        {% if result[3] >= 70 %}confidence-good
+                                        {% elif result[3] >= 50 %}confidence-average
+                                        {% else %}confidence-low{% endif %}
+                                    ">{{ result[3] }}%</h3>
+                                </div>
+                            </div>
+                            
+                            {% if result[4] %}
+                            <div>
+                                <h6>Transcript:</h6>
+                                <div class="report-transcript">{{ result[4] }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <h4>No reports found</h4>
+                <p>Start a new analysis session to generate reports.</p>
+                <a href="/index" class="btn btn-primary mt-2">Start New Analysis</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

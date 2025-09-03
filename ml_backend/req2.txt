@@ -1,0 +1,1 @@
+pip install flask flask-cors pymysql speechrecognition openai-whisper sounddevice scipy nltk summa transformers torch moviepy opencv-python keras requests

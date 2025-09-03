@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Emotion Detection</title>
+    <!-- Add Bootstrap CSS for better styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('/static/imgs/bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        nav {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            margin-top: 80px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #video-container {
+            margin-top: 20px;
+            display: none;
+        }
+        #video-feed {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .card {
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        #results-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index">Home</a>
+        <a href="/reports">Reports</a>
+        <a href="/logout">Logout</a>
+    </nav>
+    <div class="container">
+        <h1>Welcome, {{ email }}</h1>
+        <p>Start an analysis session to evaluate your confidence levels through facial expressions and speech patterns.</p>
+        
+        <div class="action-buttons">
+            <button id="startAnalysis" class="btn btn-success">Start Analysis</button>
+            <button id="stopAnalysis" class="btn btn-danger" disabled>Stop Analysis</button>
+            
+        </div>
+        
+        <div id="video-container" class="video-container">
+            <h3>Analysis in Progress</h3>
+            <img id="video-feed" src="" alt="Video feed">
+        </div>
+        
+        <div id="results-container" class="mt-4 p-4 border rounded bg-light">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Add JavaScript libraries -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Function to update the UI with results
+        function displayResults(results) {
+            // Display the results container
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.style.display = 'block';
+            
+            // Format results
+            let resultsHTML = `
+                <h3>Analysis Results</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">Visual Confidence</div>
+                            <div class="card-body">
+                                <h2>${results.visual_confidence}%</h2>
+                                <p>Based on ${results.facial_analysis.total_frames} frames</p>
+                                <p>Confident frames: ${results.facial_analysis.confident_frames}</p>
+                                <p>Not confident frames: ${results.facial_analysis.not_confident_frames}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">Verbal Confidence</div>
+                            <div class="card-body">
+                                <h2>${results.verbal_confidence}%</h2>
+                                <p>Confident phrases: ${results.verbal_analysis.confident_words}</p>
+                                <p>Uncertainty phrases: ${results.verbal_analysis.unconfident_words}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">Overall Confidence</div>
+                            <div class="card-body">
+                                <h2>${results.overall_confidence}%</h2>
+                                <p>60% visual + 40% verbal</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4>Speech Transcript</h4>
+                    <p class="p-3 bg-white rounded border">${results.transcribed_speech || "No speech detected"}</p>
+                </div>
+                
+                <div class="mt-4">
+                    <h4>Feedback</h4>
+                    <ul class="list-group">
+                        ${results.speech_feedback.length > 0 
+                            ? results.speech_feedback.map(feedback => `<li class="list-group-item">${feedback}</li>`).join('') 
+                            : '<li class="list-group-item">No specific feedback available</li>'}
+                    </ul>
+                </div>
+            `;
+            
+            resultsContainer.innerHTML = resultsHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('startAnalysis');
+            const stopBtn = document.getElementById('stopAnalysis');
+            const videoContainer = document.getElementById('video-container');
+            const videoFeed = document.getElementById('video-feed');
+            
+            startBtn.addEventListener('click', function() {
+                fetch('/start_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Analysis started:', data);
+                    videoContainer.style.display = 'block';
+                    videoFeed.src = "{{ url_for('video_feed') }}";
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    
+                    // Hide any previous results
+                    document.getElementById('results-container').style.display = 'none';
+                    
+                    // Add timer display
+                    const timerDisplay = document.createElement('div');
+                    timerDisplay.id = 'timer-display';
+                    timerDisplay.className = 'mt-2 text-center';
+                    timerDisplay.innerHTML = `<h4>Analysis in progress: ${data.duration} seconds remaining</h4>`;
+                    videoContainer.appendChild(timerDisplay);
+                    
+                    // Auto-fetch results after duration
+                    setTimeout(fetchResults, (data.duration * 1000) + 500); // Add 500ms buffer
+                });
+            });
+            
+            stopBtn.addEventListener('click', function() {
+                fetch('/stop_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Analysis stopped:', data);
+                    videoFeed.src = '';
+                    videoContainer.style.display = 'none';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    
+                    // Remove timer if exists
+                    const timer = document.getElementById('timer-display');
+                    if (timer) timer.remove();
+                    
+                    // Display results
+                    displayResults(data);
+                });
+            });
+            
+            // Function to fetch results
+            function fetchResults() {
+                fetch('/get_results')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Results fetched:', data);
+                    videoFeed.src = '';
+                    videoContainer.style.display = 'none';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    
+                    // Remove timer if exists
+                    const timer = document.getElementById('timer-display');
+                    if (timer) timer.remove();
+                    
+                    // Display results
+                    displayResults(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching results:', error);
+                });
+            }
+            
+            // Status updates
+            let statusInterval;
+            startBtn.addEventListener('click', function() {
+                statusInterval = setInterval(updateStatus, 1000);
+            });
+            
+            stopBtn.addEventListener('click', function() {
+                clearInterval(statusInterval);
+            });
+            
+            function updateStatus() {
+                fetch('/analysis_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.running) {
+                        clearInterval(statusInterval);
+                        // Auto-fetch results if analysis completed
+                        fetchResults();
+                        return;
+                    }
+                    
+                    // Update timer if exists
+                    const timer = document.getElementById('timer-display');
+                    if (timer) {
+                        timer.innerHTML = `<h4>Analysis in progress: ${data.time_remaining}s remaining</h4>`;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

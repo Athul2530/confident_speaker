@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Speech Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-microphone-alt"></i>
+                AI Speech Analysis
+            </div>
+            <div class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/reports"><i class="fas fa-chart-bar"></i> Reports</a>
+                <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="speech-card">
+            <div class="card-header">
+                <h1>AI Speech Analysis</h1>
+                <p>Enhance your speaking skills with real-time AI feedback</p>
+            </div>
+
+            <button id="start-button" class="record-button">
+                <i class="fas fa-microphone"></i>
+                Start Recording
+            </button>
+
+            <div class="wave-animation">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+
+            <div class="result-container">
+                <div class="result-box">
+                    <h3><i class="fas fa-file-alt"></i> Transcription</h3>
+                    <p id="transcription">Your speech will appear here...</p>
+                </div>
+
+                <div class="result-box">
+                    <h3><i class="fas fa-chart-line"></i> Vocabulary Assessment</h3>
+                    <p id="pronunciation-assessment">Waiting for your speech...</p>
+                </div>
+
+                <div class="result-box">
+                    <h3><i class="fas fa-sync"></i> Most Repeated Word</h3>
+                    <p id="most-repeated-word">Analyzing word patterns...</p>
+                </div>
+
+                <div class="result-box">
+                    <h3><i class="fas fa-lightbulb"></i> Suggestions</h3>
+                    <p id="suggestions">AI suggestions will appear here...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('start-button');
+        const transcriptionDiv = document.getElementById('transcription');
+        const assessmentDiv = document.getElementById('pronunciation-assessment');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const mostRepeatedWordDiv = document.getElementById('most-repeated-word');
+        const waveAnimation = document.querySelector('.wave-animation');
+        const resultContainer = document.querySelector('.result-container');
+        const speechCard = document.querySelector('.speech-card');
+
+        startButton.addEventListener('click', () => {
+            speechCard.classList.add('recording');
+            waveAnimation.classList.add('visible');
+            startButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
+            
+            transcriptionDiv.textContent = 'Listening...';
+            assessmentDiv.textContent = 'Analyzing...';
+            suggestionsDiv.textContent = 'Preparing suggestions...';
+            mostRepeatedWordDiv.textContent = 'Analyzing patterns...';
+            
+            startSpeechRecognition();
+        });
+
+        function startSpeechRecognition() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                transcriptionDiv.textContent = transcript;
+                resultContainer.classList.add('visible');
+                assessPronunciation(transcript);
+                
+                speechCard.classList.remove('recording');
+                waveAnimation.classList.remove('visible');
+                startButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording';
+            }
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                transcriptionDiv.textContent = 'Error occurred. Please try again.';
+                
+                speechCard.classList.remove('recording');
+                waveAnimation.classList.remove('visible');
+                startButton.innerHTML = '<i class="fas fa-microphone"></i> Start Recording';
+            }
+        }
+
+        function assessPronunciation(text) {
+            fetch('/analyze', {
+                method: 'POST',
+                body: JSON.stringify({ text: text }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                assessmentDiv.textContent = data.assessment;
+                suggestionsDiv.textContent = data.suggestions;
+                mostRepeatedWordDiv.textContent = data.most_repeated_word;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                assessmentDiv.textContent = 'Error in analysis. Please try again.';
+            });
+        }
+    </script>
+</body>
+</html>
