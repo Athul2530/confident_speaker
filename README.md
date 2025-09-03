@@ -24,3 +24,46 @@ The system analyzes **speech, tone, pace, vocabulary, and body language** using 
 ---
 
 ## 📂 Project Structure
+ConfidenceVoice/
+│── backend/ # Node.js backend APIs
+│── frontend/ # React frontend
+│── ml_backend/ # Python ML models (Flask/TensorFlow)
+│── confidence_speaker.sql # Database schema
+
+2️⃣ Install dependencies
+
+For frontend:
+
+cd frontend
+npm install
+
+
+For backend:
+
+cd backend
+npm install
+
+
+For ML backend:
+
+cd ml_backend
+pip install -r requirements.txt
+
+3️⃣ Run the project
+
+Start backend:
+
+cd backend
+npm start
+
+
+Start frontend:
+
+cd frontend
+npm start
+
+
+Start ML server:
+
+cd ml_backend
+python app.py
